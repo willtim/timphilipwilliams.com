@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>tim philip williams :: $title$</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A functional programming blog.">
+    <meta name="author" content="Tim Philip Williams">
+    <meta name="robots" content="$robots$">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/bootstrap.css">
+    <link rel="stylesheet" href="/css/bootstrap-responsive.css">
+    <link rel="stylesheet" href="/css/font-awesome.css">
+    <link rel="stylesheet" href="/css/prettify.css">
+    <link rel="stylesheet" href="/css/syntax.css">
+
+    <!--[if IE 7]>
+       <link rel="stylesheet" href="/css/font-awesome-ie7.css">
+    <![endif]-->
+
+    <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Icons -->
+    <link rel="shortcut icon" href="/img/favicon.png">
+
+    <!-- Google analytics -->
+    <script type="text/javascript">
+        var _gaq = _gaq || [];
+        _gaq.push(['_setAccount', 'UA-34451630-1']);
+        _gaq.push(['_trackPageview']); 
+        (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+        })();
+    </script>
+
+    </head>
+
+  <body>
+
+  <div class="navbar navbar-inverse">
+      <div class="navbar-inner">
+          <div class="container">
+              <h6><a class="brand" href="$postsurl$">tim philip williams</a></h6>
+              <ul class="nav">
+                  <!--<li class="$homeclass$"><a href="$homeurl$"><i class="icon-home"></i> Home</a></li>-->
+                  <li class="$postsclass$"><a href="$postsurl$"><i class="icon-inbox"></i> Posts</a></li>
+                  <li class="$aboutmeclass$"><a href="$aboutmeurl$"><i class="icon-user"></i>
+                  About Me</a></li>
+                  <li class="$tagsclass$"><a href="$tagsurl$"><i class="icon-tags"></i>
+                  Tags</a></li>
+                  <li><a href="/rss.xml" class="rss-link"><i class="icon-rss"></i><abbr class="initialism">RSS</abbr></a></li>
+              </ul>
+          </div>
+      </div>
+  </div>
+
+  $body$
+  
+  <!-- Javascript - placed at the end of the document so the pages load faster-->
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+  </body>
+</html>

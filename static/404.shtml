@@ -1,0 +1,14 @@
+<div class="hero-unit 404 pagination-centered">
+  <div class="alert alert-error">
+    <i class="icon-warning-sign"></i> Error 404: timphilipwilliams.com<!--#echo var="request_uri" -->
+  </div><!-- .alert .alert-error -->
+
+  <h1>404 Not Found</h1>
+  <p>The impossible happened.</p>
+
+  <p style="padding-top: 1em;">
+    <a class="btn btn-large btn-inverse" href="http://twitter.com/_willtim_"><i class="icon-twitter"></i> Send Tweet</a>
+    <a class="btn btn-large btn-primary" href="/" style="margin-left:0.5em;"><i class="icon-home"></i> Back to the front page</a>
+  </p>
+
+</div><!-- .hero-unit -->

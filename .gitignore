@@ -1,0 +1,7 @@
+_cache/
+_site/
+drafts/
+*.hi
+*.o
+hakyll
+\#*#
