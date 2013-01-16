@@ -8,7 +8,7 @@ _site: hakyll
 	./hakyll rebuild
 
 sync: _site
-	s3cmd -P --delete-removed sync _site/ s3://timphilipwilliams.com/
+	s3cmd -P --delete-removed sync _site/ s3://www.timphilipwilliams.com/
 
 clean: 
 	find . -name '*.o' | xargs rm

@@ -102,26 +102,14 @@ main = hakyllWith config $ do
 
     -- 404
     -- Don't relativize URLs
-    match "static/404.shtml" $ do
-        route   $ constRoute "errors/404.shtml"
+    match "static/404.html" $ do
+        route   $ constRoute "404.html"
         compile $ readPageCompiler
             >>> addMyDefaultFields
             >>> arr (setField "postsclass" "")
             >>> arr (setField "title" "404")
             >>> arr (setField "robots" "noindex, nofollow, noarchive, nocache")
             >>> applyTemplateCompilers ["default", "scaffold"]
- 
-    -- 403
-    -- Don't relativize URLs
-    match "static/403.shtml" $ do
-        route   $ constRoute "errors/403.shtml"
-        compile $ readPageCompiler
-            >>> addMyDefaultFields
-            >>> arr (setField "postsclass" "")
-            >>> arr (setField "title" "403")
-            >>> arr (setField "robots" "noindex, nofollow, noarchive, nocache")
-            >>> applyTemplateCompilers ["default", "scaffold"]
-
 
 -- | Consistent convention for links that don't go anywhere
 nullLink :: String
@@ -176,20 +164,21 @@ makePostList :: String
 makePostList message tag posts =
     constA (mempty, posts)
         >>> addPostList "posts" "templates/postitem.html"
+        >>> addMyDefaultFields
         >>> arr (setField "title" (message ++ " &#8216;" ++ tag ++ "&#8217;"))
-      --  >>> arr (setField "tags" tag)
+        >>> arr (setField "tag" tag)
       --  >>> arr (setField "route" (adjustLink tag))
-        >>> applyTemplateCompilers ["posts", "default", "scaffold"]
+        >>> applyTemplateCompilers ["postswithtag", "default", "scaffold"]
         >>> relativizeUrlsCompiler
 
 -- TODO clean up
 tagRoute :: Routes
-tagRoute =
-    setExtension ".html" `composeRoutes`
-    gsubRoute "." adjustLink `composeRoutes`
-        gsubRoute "/" (const "") `composeRoutes`
-            gsubRoute "^tag" (const "tag/") `composeRoutes`
-                gsubRoute "-html" (const "/index.html")
+tagRoute = foldl1 composeRoutes
+    [ setExtension ".html"
+    , gsubRoute "." adjustLink
+    , gsubRoute "/" (const "")
+    , gsubRoute "^tag" (const "tag/")
+    , gsubRoute "-html" (const "/index.html") ]
 
 adjustLink = filter (not . isSlash) . map (toLower . replaceWithDash)
   where

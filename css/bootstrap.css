@@ -642,6 +642,8 @@ h1 {
 h2 {
   font-size: 30px;
   line-height: 40px;
+  padding-top: 15px;
+  padding-bottom: 5px;
 }
 
 h3 {
