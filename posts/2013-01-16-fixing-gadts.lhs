@@ -8,14 +8,14 @@ description: Generic recursion schemes for GADTs using fixed points of higher-or
 One of my personal favourite applications of category theory applied to typed
 functional programming, is datatype generic programming using the fixed points
 of functors formed by parametrising the recursion. At my place of work, this
-technique has been used to great affect to write a rich set of standardised
+technique has been used to great effect to write a rich set of standardised
 recursion schemes that work over many custom data types. In this post, I will
-attempt to explain how we have applied this technique to syntax trees defined
-using Generalised Algebraic Data Types (GADTs). The jury is still out on whether
-the additional type-safety provided by GADTs is worth the added inconvenience of
-working with them. I will let the reader decide for themselves rather than offer
-an opinion!  Certainly Haskell and its libraries continue to improve in this
-area all the time.
+attempt to explain how we have applied this technique to language syntax trees
+defined using Generalised Algebraic Data Types (GADTs). The jury is still out on
+whether the additional type-safety provided by GADTs is worth the added
+inconvenience of working with them. I will let the reader decide for themselves
+rather than offer an opinion!  Certainly Haskell and its libraries continue to
+improve in this area all the time.
 
 Unfortunately we are going to need a fair few extensions to work effectively
 with GADTs:
@@ -191,7 +191,7 @@ cata alg = alg . fmap (cata alg) . unFix
 > hcata alg = alg . hfmap (hcata alg) . unHFix
 
 Note that hcata folds to a functor f and not to a value. So to write an
-evaluation alegbra we will need an identity functor:
+evaluation algebra we will need an identity functor:
 
 > newtype I x = I { unI :: x }
 > 
@@ -270,7 +270,7 @@ method:
 >   hfoldMap f (IsEq x y) = f x `mappend` f y
 
 Note that we cannot use the standard class in Data.Foldable as we require the
-supplied monoid constructor to be polymorphic in the type-index. To be
+supplied monoid constructor to be polymorphic in the type-index. In fact, to be
 theoretically correct and avoid problems adding more higher-order analogues, we
 should really define a type-indexed monoid, but we'll stop short of that in
 order to use all the existing monoid instances out there.
@@ -335,7 +335,7 @@ False
 Couldn't match expected type `Bool' with actual type `Int' ...
 ~~~
 
-Expressions of the same type index compare with (==), but otherwise we get a
+Expressions of the same type index compare with `(==)`, but otherwise we get a
 type error. This will not always be what we want; a *heterogenous* equality
 comparison would allow us to compare expressions with potentially different
 type indices for equality. One likely use case for this is adding an expression
@@ -367,8 +367,8 @@ new datatype:
 > data x :=: y where
 >   Refl :: x :=: x
 
-We'll define a new type-class "HEqHet" to support our heterogeneous equality
-comparison "heqHet"; and make use of a helper method "heqIdx", which returns
+We'll define a new type-class HEqHet to support our heterogeneous equality
+comparison `heqHet`; and make use of a helper method `heqIdx`, which returns
 evidence of index equality if the indexes are the same type, but ignores the
 structure. It turns out that this helper method is the only missing piece that
 we need to implement heterogeneous equality, as `heq` will take care of
