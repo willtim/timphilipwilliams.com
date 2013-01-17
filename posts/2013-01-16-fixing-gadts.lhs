@@ -25,9 +25,7 @@ with GADTs:
 > {-# LANGUAGE RankNTypes           #-}
 > {-# LANGUAGE TypeOperators        #-}
 > {-# LANGUAGE FlexibleInstances    #-}
-> {-# LANGUAGE FlexibleContexts     #-}
 > {-# LANGUAGE UndecidableInstances #-}
-> {-# LANGUAGE DeriveFunctor        #-}
 
 > import Control.Arrow ((&&&),first)
 > import Data.Function (on)
@@ -101,21 +99,21 @@ representable). We would start by writing down something like this:
 
 ~~~{.haskell}
 data Expr  :: * -> * where
-   Const :: Int -> Expr Int
-   Add   :: Expr Int -> Expr Int -> Expr Int
-   Mul   :: Expr Int -> Expr Int -> Expr Int
-   Cond  :: Expr Bool -> Expr a -> Expr a -> Expr a
-   IsEq  :: Expr Int -> Expr Int -> Expr Bool
+   Const :: Int                            -> Expr Int
+   Add   :: Expr Int  -> Expr Int          -> Expr Int
+   Mul   :: Expr Int  -> Expr Int          -> Expr Int
+   Cond  :: Expr Bool -> Expr a  -> Expr a -> Expr a
+   IsEq  :: Expr Int  -> Expr Int          -> Expr Bool
 ~~~
 
 Replacing all the points of recursion with a type parameter gives us this:
 
 > data ExprF  :: (* -> *) -> * -> * where
->   Const :: Int -> ExprF r Int
->   Add   :: r Int -> r Int -> ExprF r Int
->   Mul   :: r Int -> r Int -> ExprF r Int
->   Cond  :: r Bool -> r a -> r a -> ExprF r a
->   IsEq  :: r Int -> r Int -> ExprF r Bool
+>   Const :: Int                    -> ExprF r Int
+>   Add   :: r Int  -> r Int        -> ExprF r Int
+>   Mul   :: r Int  -> r Int        -> ExprF r Int
+>   Cond  :: r Bool -> r a  -> r a  -> ExprF r a
+>   IsEq  :: r Int  -> r Int        -> ExprF r Bool
 
 The problem is that ExprF is no longer a functor, so we can't use the recursion
 schemes defined for functors, such as cata above. When we tie the recursive
@@ -173,11 +171,11 @@ If you squint a bit, the above should look very familiar. The HFunctor instance
 for ExprF is very simple and is as follows:
 
 > instance HFunctor ExprF where
->   hfmap f (Const i) = Const i
->   hfmap f (Add x y) = Add (f x) (f y)
->   hfmap f (Mul x y) = Mul (f x) (f y)
+>   hfmap f (Const i)    = Const i
+>   hfmap f (Add x y)    = Add (f x) (f y)
+>   hfmap f (Mul x y)    = Mul (f x) (f y)
 >   hfmap f (Cond x y z) = Cond (f x) (f y) (f z)
->   hfmap f (IsEq x y) = IsEq (f x) (f y)
+>   hfmap f (IsEq x y)   = IsEq (f x) (f y)
 
 For the higher-order recursion schemes, we can mechanically derive them from the
 vanilla Functor versions. For example, here is cata (again) and hcata.
@@ -199,11 +197,11 @@ evaluation algebra we will need an identity functor:
 > eval = unI . hcata evalAlg
 >
 > evalAlg :: ExprF I :~> I
-> evalAlg (Const i) = I i
-> evalAlg (Add x y) = I $ unI x + unI y
-> evalAlg (Mul x y) = I $ unI x * unI y
+> evalAlg (Const i)    = I i
+> evalAlg (Add x y)    = I $ unI x + unI y
+> evalAlg (Mul x y)    = I $ unI x * unI y
 > evalAlg (Cond x y z) = I $ if unI x then unI y else unI z
-> evalAlg (IsEq x y) = I $ unI x == unI y
+> evalAlg (IsEq x y)   = I $ unI x == unI y
 
 The newtype wrapping and unwrapping is rather irratating, but has no runtime
 cost as the newtype constructors are removed during compilation. We could have
@@ -240,12 +238,12 @@ we'll need `K` in order to define a pretty-printer:
 > ppr :: Expr a -> Doc
 > ppr = unK . hcata alg where
 >   alg :: ExprF (K Doc) :~> K Doc
->   alg (Const i) = K . text $ show i
->   alg (Add x y) = K . parens $ unK x <+> text "+" <+> unK y
->   alg (Mul x y) = K . parens $ unK x <+> text "*" <+> unK y
+>   alg (Const i)    = K . text $ show i
+>   alg (Add x y)    = K . parens $ unK x <+> text "+" <+> unK y
+>   alg (Mul x y)    = K . parens $ unK x <+> text "*" <+> unK y
 >   alg (Cond x y z) = K $ text "if" <+> unK x <+>
 >                      text "then" <+> unK y <+> text "else" <+> unK z
->   alg (IsEq x y) = K $ unK x <+> text "==" <+> unK y
+>   alg (IsEq x y)   = K $ unK x <+> text "==" <+> unK y
 
 ~~~
 λ> ppr x
@@ -263,11 +261,11 @@ method:
 >   hfoldMap :: Monoid m => (forall b. f b -> m) -> h f a -> m
  
 > instance HFoldable ExprF where
->   hfoldMap _ (Const _) = mempty
->   hfoldMap f (Add x y) = f x `mappend` f y
->   hfoldMap f (Mul x y) = f x `mappend` f y
+>   hfoldMap _ (Const _)    = mempty
+>   hfoldMap f (Add x y)    = f x `mappend` f y
+>   hfoldMap f (Mul x y)    = f x `mappend` f y
 >   hfoldMap f (Cond x y z) = f x `mappend` f y `mappend` f z
->   hfoldMap f (IsEq x y) = f x `mappend` f y
+>   hfoldMap f (IsEq x y)   = f x `mappend` f y
 
 Note that we cannot use the standard class in Data.Foldable as we require the
 supplied monoid constructor to be polymorphic in the type-index. In fact, to be
@@ -315,11 +313,11 @@ context and type-index combination.
 For our ExprF datatype, we need the following instances:
 
 > instance HEq r => Eq (ExprF r a) where
->   Const x1 == Const x2 = x1 == x2
->   Add x1 x2 == Add y1 y2 = heq x1 y1 && heq x2 y2
->   Mul x1 x2 == Mul y1 y2 = heq x1 y1 && heq x2 y2
->   Cond x1 x2 x3 == Cond y1 y2 y3 = heq x1 y1 && heq x2 y2 && heq x3 y3
->   IsEq x1 x2 == IsEq y1 y2 = heq x1 y1 && heq x2 y2
+>   Const x1 == Const x2            = x1 == x2
+>   Add x1 x2 == Add y1 y2          = heq x1 y1 && heq x2 y2
+>   Mul x1 x2 == Mul y1 y2          = heq x1 y1 && heq x2 y2
+>   Cond x1 x2 x3 == Cond y1 y2 y3  = heq x1 y1 && heq x2 y2 && heq x3 y3
+>   IsEq x1 x2 == IsEq y1 y2        = heq x1 y1 && heq x2 y2
 >
 > instance HEq r => HEq (ExprF r) where heq = (==)
 > instance Eq (Expr a) where (==) = (==) `on` unHFix
