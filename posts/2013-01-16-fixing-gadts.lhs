@@ -508,7 +508,7 @@ difficult to arrive at a solution to the above by combining F-algebras.
 
 The HFunctor has also proved useful for both nested vanilla algebraic datatypes
 [1] and generic mutual recursion [2]. Further reading on HFunctor applied to
-GADTs can be found here [3].
+GADTs can be found here [3]. The literal haskell for this post can be found [here](https://github.com/willtim/timphilipwilliams.com/blob/master/posts/2013-01-16-fixing-gadts.lhs).
 
 * * * * * * * *
 
@@ -522,4 +522,4 @@ References
 [^1]: In category theory parlance, (Fix f :: *, unFix :: f (Fix f) -> Fix f) is
 the *initial algebra* in the category of F-algebras, for which there is a unique
 homomorphism (the catamorphism) to any other algebra (f a :: *, alg :: f a -> a) in the category.
-[^2]: See https://personal.cis.strath.ac.uk/conor.mcbride/pub/she/idiom.html
+[^2]: Conor McBride's post on idiom brackets can be found [here](https://personal.cis.strath.ac.uk/conor.mcbride/pub/she/idiom.html).
