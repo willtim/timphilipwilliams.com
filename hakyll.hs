@@ -45,6 +45,16 @@ main = hakyllWith config $ do
       >>> applyTemplateCompilers ["posts", "default", "scaffold"]
       >>> relativizeUrlsCompiler    
     
+    match "slides.html" $ do
+        route   $ idRoute
+        compile $ readPageCompiler
+            >>> addMyDefaultFields
+            >>> arr (setField "title" "Slides")
+            >>> arr (setField "slidesurl" nullLink)
+            >>> arr (setField "slidesclass" "active")
+            >>> applyTemplateCompilers ["default", "scaffold"]
+            >>> relativizeUrlsCompiler
+
     match "aboutme.html" $ do
         route   $ idRoute
         compile $ readPageCompiler
@@ -85,6 +95,11 @@ main = hakyllWith config $ do
         route   $ idRoute
         compile $ copyFileCompiler
 
+    -- Copy slides
+    match "slides/*" $ do
+        route   $ idRoute
+        compile $ copyFileCompiler
+
     -- Tags
     create "tags" $
         requireAll "posts/*" (\_ ps -> readTags ps :: Tags String)
@@ -118,9 +133,11 @@ nullLink = "javascript:void(0)"
 -- | Default setup is for individual post pages
 addMyDefaultFields = arr (trySetField "robots" "index, follow")
     >>> arr (trySetField "postsclass" "")
+    >>> arr (trySetField "slidesclass" "")
     >>> arr (trySetField "aboutmeclass" "")
     >>> arr (trySetField "tagsclass" "")
     >>> arr (trySetField "postsurl" "/")
+    >>> arr (trySetField "slidesurl" "/slides.html")
     >>> arr (trySetField "aboutmeurl" "/aboutme.html")
     >>> arr (trySetField "tagsurl" "/tags.html")
     >>> arr (trySetField "author" "Tim Williams")
