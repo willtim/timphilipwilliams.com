@@ -26,6 +26,7 @@ with GADTs:
 > {-# LANGUAGE TypeOperators        #-}
 > {-# LANGUAGE FlexibleInstances    #-}
 > {-# LANGUAGE UndecidableInstances #-}
+> {-# LANGUAGE DeriveFunctor        #-}
 
 > import Control.Arrow ((&&&),first)
 > import Data.Function (on)
@@ -106,7 +107,14 @@ data Expr  :: * -> * where
    IsEq  :: Expr Int  -> Expr Int          -> Expr Bool
 ~~~
 
-Replacing all the points of recursion with a type parameter gives us this:
+Note that we cannot even create the usual Functor, Foldable or Traversable
+instances for the above, since the `a` in `Expr a` is a type-index, which is
+refined during case analysis, not a vanilla type parameter that we are familiar
+with from parameteric polymorphism.
+
+Let's proceed to factor out the recursion as we did with the algebraic datatype
+example. Replacing all the points of recursion with a type parameter gives us
+this:
 
 > data ExprF  :: (* -> *) -> * -> * where
 >   Const :: Int                    -> ExprF r Int
@@ -115,13 +123,13 @@ Replacing all the points of recursion with a type parameter gives us this:
 >   Cond  :: r Bool -> r a  -> r a  -> ExprF r a
 >   IsEq  :: r Int  -> r Int        -> ExprF r Bool
 
-The problem is that ExprF is no longer a functor, so we can't use the recursion
-schemes defined for functors, such as cata above. When we tie the recursive
-knot, ExprF must become the type constructor Expr which is parametrised by the
-type (index) of the expression it represents. The type ExprF is therefore
-parametrised by a type constructor and the expression type.  So how do we fix
-it? Pun intended. It turns out that we need a higher-order version of Fix,
-"HFix".  Note the pattern in the kind signatures below, we obtain the kind
+The problem is that ExprF is no longer of kind `* -> *`, so we can't use the
+recursion schemes defined for functors, such as cata above. When we tie the
+recursive knot, ExprF must become the type constructor Expr which is
+parametrised by the type (index) of the expression it represents. The type ExprF
+is therefore parametrised by a type constructor and the expression type.  So how
+do we fix it? Pun intended. It turns out that we need a higher-order version of
+Fix, "HFix".  Note the pattern in the kind signatures below, we obtain the kind
 signature required for HFix by substituting `(* -> *)` for `*` in Fix. Redundant
 brackets have been added for clarity.
 
@@ -188,7 +196,11 @@ cata alg = alg . fmap (cata alg) . unFix
 > hcata :: HFunctor h => (h f :~> f) -> HFix h :~> f
 > hcata alg = alg . hfmap (hcata alg) . unHFix
 
-Note that hcata folds to a functor f and not to a value. So to write an
+Note that recent versions of GHC have some support for kind polymorphism via the
+PolyKinds extension, so we should be able to unify these two definitions in some
+way.
+
+The hcata above, folds to a functor f and not to a value. So to write an
 evaluation algebra we will need an identity functor:
 
 > newtype I x = I { unI :: x }
@@ -508,7 +520,7 @@ difficult to arrive at a solution to the above by combining F-algebras.
 
 The HFunctor has also proved useful for both nested vanilla algebraic datatypes
 [1] and generic mutual recursion [2]. Further reading on HFunctor applied to
-GADTs can be found here [3]. The literal haskell for this post can be found [here](https://github.com/willtim/timphilipwilliams.com/blob/master/posts/2013-01-16-fixing-gadts.lhs).
+GADTs can be found here [3]. Finally, the literal haskell for this post can be found [here](https://github.com/willtim/timphilipwilliams.com/blob/master/posts/2013-01-16-fixing-gadts.lhs).
 
 * * * * * * * *
 
