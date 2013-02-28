@@ -26,7 +26,9 @@ with GADTs:
 > {-# LANGUAGE TypeOperators        #-}
 > {-# LANGUAGE FlexibleInstances    #-}
 > {-# LANGUAGE UndecidableInstances #-}
+> {-# LANGUAGE ViewPatterns         #-}
 > {-# LANGUAGE DeriveFunctor        #-}
+
 
 > import Control.Arrow ((&&&),first)
 > import Data.Function (on)
@@ -96,7 +98,7 @@ A GADT representation
 
 If we wanted to utilise the newer GADTs to give us an efficient tagless
 representation and a type-safe invariant (only type-safe expressions are
-representable). We would start by writing down something like this:
+representable); we would start by writing down something like this:
 
 ~~~{.haskell}
 data Expr  :: * -> * where
@@ -204,7 +206,7 @@ The hcata above, folds to a functor f and not to a value. So to write an
 evaluation algebra we will need an identity functor:
 
 > newtype I x = I { unI :: x }
-> 
+>
 > eval :: Expr a -> a
 > eval = unI . hcata evalAlg
 >
@@ -416,13 +418,13 @@ method.
 >   heqIdx TBool TBool = Just Refl
 >   heqIdx TInt TInt   = Just Refl
 >   heqIdx _ _         = Nothing
-> 
+>
 > instance HEq Type where
 >   heq TBool TBool = True
 >   heq TInt  TInt  = True
 >   heq _     _     = False
 
-Now the machinery is in place, let's try out a heterogeneous equality test: 
+Now the machinery is in place, let's try out a heterogeneous equality test:
 
 ~~~
 λ> isJust $ x `heqHet` x
@@ -432,6 +434,7 @@ False
 ~~~
 
 Recall that the ultimate aim was this:
+
 ~~~
 λ> elem (Some x) [Some x, Some y]
 True
@@ -477,7 +480,11 @@ higher-order analogues:
 > (&&&&) :: (f :~> g) -> (f :~> g') -> f :~> (g :*: g')
 > (&&&&) u v x = u x :*: v x
 > infixr 3 &&&&
-> 
+>
+> -- | Generalised unzip for higher-order functors
+> hfunzip :: HFunctor h => h (f :*: g) :~> (h f :*: h g)
+> hfunzip = hfmap hfst &&&& hfmap hsnd
+>
 > -- | paramorphism for higher-order functors
 > hpara :: HFunctor h => (h (f :*: HFix h) :~> f) -> (HFix h :~> f)
 > hpara psi = psi . hfmap (hpara psi &&&& id) . unHFix
@@ -497,13 +504,14 @@ The implementation of our tracing evaluator is as follows:
 > evalTrace :: Expr a -> Result
 > evalTrace = unK . hsnd . hpara psi where
 >   psi :: ExprF ((I :*: K Result) :*: Expr) :~> (I :*: K Result)
->   psi n = I v :*: (K $ (Some e, v') : m)
->      where
->        v  = unI . evalAlg $ hfmap (hfst . hfst) n
->        m  = hfoldMap unK  $ hfmap (hsnd . hfst) n
->        e  = HFix          $ hfmap hsnd n
->        v' = mkValue (getType e) v
-> 
+>   psi (hfunzip -> ((hfunzip -> (hv :*: hr)) :*: he)) =
+>     I v :*: (K $ (Some e, v') : m)
+>       where
+>         v  = unI . evalAlg $ hv
+>         m  = hfoldMap unK  $ hr
+>         e  = HFix he
+>         v' = mkValue (getType e) v
+>
 > mkValue :: Type a -> a -> Value
 > mkValue TBool x = VBool x
 > mkValue TInt  x = VInt  x
