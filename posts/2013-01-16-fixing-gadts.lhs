@@ -34,7 +34,7 @@ with GADTs:
 > import Data.Function (on)
 > import Data.Maybe (isJust, fromJust)
 > import Data.Monoid
-> import Text.PrettyPrint.Leijen
+> import Text.PrettyPrint.Leijen hiding ((<>))
 
 Jumping straight in, for a simple expression abstract syntax datatype, with addition,
 multiplication and constants, the *pattern* functor representation would be:
@@ -276,10 +276,10 @@ method:
  
 > instance HFoldable ExprF where
 >   hfoldMap _ (Const _)    = mempty
->   hfoldMap f (Add x y)    = f x `mappend` f y
->   hfoldMap f (Mul x y)    = f x `mappend` f y
->   hfoldMap f (Cond x y z) = f x `mappend` f y `mappend` f z
->   hfoldMap f (IsEq x y)   = f x `mappend` f y
+>   hfoldMap f (Add x y)    = f x <> f y
+>   hfoldMap f (Mul x y)    = f x <> f y
+>   hfoldMap f (Cond x y z) = f x <> f y <> f z
+>   hfoldMap f (IsEq x y)   = f x <> f y
 
 Note that we cannot use the standard class in Data.Foldable as we require the
 supplied monoid constructor to be polymorphic in the type-index. In fact, to be
@@ -293,7 +293,7 @@ and hfoldMap:
 > size :: Expr a -> Int
 > size = getSum . unK . hcata alg where
 >   alg :: ExprF (K (Sum Int)) :~> K (Sum Int)
->   alg x = K $ Sum 1 `mappend` hfoldMap unK x
+>   alg x = K $ Sum 1 <> hfoldMap unK x
 
 ~~~
 λ> size x
@@ -321,7 +321,7 @@ context and type-index combination.
 > -- | Higher-order analogue of Eq
 > class HEq (f :: * -> *) where
 >   heq :: f a -> f a -> Bool
- 
+
 > instance HEq (f (HFix f)) => HEq (HFix f) where heq = heq `on` unHFix
 
 For our ExprF datatype, we need the following instances:
@@ -395,7 +395,7 @@ which makes use of `heqIdx` and `heq`.
 >   heqHet x y = case heqIdx x y of
 >     Just Refl | x `heq` y -> Just Refl
 >     _                     -> Nothing
- 
+
 > instance (HEq f, HEqHet f) => Eq (Some f) where
 >   Some x == Some y = isJust $ x `heqHet` y
 
