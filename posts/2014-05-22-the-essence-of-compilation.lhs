@@ -15,8 +15,8 @@ have only addition and constants in the input expression language
 (Hutton's razor[1]) and assume an inifinite supply of virtual-machine
 registers (as does the SSA-form used by LLVM[2]).
 
-To start with, we'll need a bunch of imports. The non-platform
-hackage packages are uu-parsinglib and wl-pprint.
+To start with, we'll need a bunch of imports. Note that two non-platform
+hackage packages are required: uu-parsinglib and wl-pprint.
 
 > import Control.Applicative
 > import Control.Monad.State
@@ -28,8 +28,8 @@ hackage packages are uu-parsinglib and wl-pprint.
 > import Text.PrettyPrint.Leijen ((<+>), (<>), hsep, vsep, int
 >                                , text, punctuate, comma)
 
-The abstract syntax tree (AST) is a simple inductive type--the Add
-constructor takes two values of type expression.  The leaf nodes are
+The abstract syntax tree (AST) is a simple inductive type--the 'Add'
+constructor takes two values of type 'Exp'.  The leaf nodes are
 literal integers (constants).
 
 > -- | abstract syntax tree
@@ -47,9 +47,9 @@ following structurally recursive function:
 
 The parser for our language makes use of the uu-parsinglib
 parser-combinator library, which allows us to compose smaller parsers
-into a larger parsers using "combinators" (functions that take parsers
+into a larger parsers using _combinators_ (functions that take parsers
 and return parsers). The resulting code often mirrors the formal
-grammar in structure.
+grammar.
 
 > -- | the parser
 > parse :: String -> Exp
@@ -62,6 +62,8 @@ grammar in structure.
 ~~~
 λ> parse "1 + (2 + 3) + 4"
 Add (Add (Lit 1) (Add (Lit 2) (Lit 3))) (Lit 4)
+λ> eval it
+10
 ~~~
 
 Now that we have a parser and an AST, we can turn our attention to the
@@ -72,7 +74,7 @@ A program is an ordered list of instructions (statements):
 
 > type Program = [Inst]
 
-An instruction is generally an opcode mnemonics followed by one or
+An instruction is generally an opcode mnemonic followed by one or
 more operands (arguments). We only need one instruction to implement
 addition:
 
@@ -80,7 +82,7 @@ addition:
 >             deriving (Show)
 >
 
-Operands can either be immediate values or a register:
+Operands can either be immediate values or registers:
 
 > data Opd = Val Int -- ^ immediate value
 >          | Reg Reg -- ^ register
@@ -99,9 +101,10 @@ following type:
 
 The code generation function 'gen' is a structurally-recursive
 function on the AST. When given an expression, it returns a
-computation that when run, yields an operand which at runtime will
-represent that value of the expression and the list of instructions
-(program) via a side-effect.
+computation that when run, performs side-effects and yields a
+result. The list of instructions (program) is emitted as a
+side-effect; and the result is the operand which at runtime will
+represent that value of the expression.
 
 > gen :: Exp -> Gen Opd
 > gen (Add x y) = do
