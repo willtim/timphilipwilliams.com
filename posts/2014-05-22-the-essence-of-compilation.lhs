@@ -76,7 +76,7 @@ A program is an ordered list of instructions (statements):
 
 An instruction is generally an opcode mnemonic followed by one or
 more operands (arguments). We only need one instruction to implement
-addition:
+addition. Note that the first operand is the destination register.
 
 > data Inst = IAdd Reg Opd Opd
 >             deriving (Show)
