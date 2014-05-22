@@ -12,8 +12,9 @@ essentially asserting that compilers and external DSLs
 demonstrate this, I put together a simple tutorial compiler and
 virtual-machine, which I think catches the essence of compilation.  We
 have only addition and constants in the input expression language
-(Hutton's razor[1]) and assume an inifinite supply of virtual-machine
-registers (as does the SSA-form used by LLVM[2]).
+(Hutton's Razor [1]) and assume an inifinite supply of virtual-machine
+registers (as does the SSA-form used by LLVM [2]). We therefore do not need
+to concern ourselves with the details of register allocation.
 
 To start with, we'll need a bunch of imports. Note that two non-platform
 hackage packages are required: uu-parsinglib and wl-pprint.
@@ -21,8 +22,8 @@ hackage packages are required: uu-parsinglib and wl-pprint.
 > import Control.Applicative
 > import Control.Monad.State
 > import Control.Monad.Writer (WriterT, execWriterT, tell)
-> import Data.IntMap (IntMap)
-> import qualified Data.IntMap as IM
+> import Data.Map (Map)
+> import qualified Data.Map as M
 > import Text.ParserCombinators.UU (pChainl)
 > import Text.ParserCombinators.UU.Utils
 > import Text.PrettyPrint.Leijen ((<+>), (<>), hsep, vsep, int
@@ -66,6 +67,10 @@ Add (Add (Lit 1) (Add (Lit 2) (Lit 3))) (Lit 4)
 10
 ~~~
 
+\
+![an abstract syntax tree](/img/ast-small.png)\
+\
+
 Now that we have a parser and an AST, we can turn our attention to the
 code-generation phase. First we need to define some types for the
 instruction set we are targetting.
@@ -101,10 +106,11 @@ following type:
 
 The code generation function 'gen' is a structurally-recursive
 function on the AST. When given an expression, it returns a
-computation that when run, performs side-effects and yields a
-result. The list of instructions (program) is emitted as a
-side-effect; and the result is the operand which at runtime will
-represent that value of the expression.
+computation that when run, emits an ordered list of instructions as a
+side-effect and yields an operand result.  The operand result only
+makes sense in the context of the previously emitted statements; and
+will ultimately represent the value of the expression on instruction
+execution.
 
 > gen :: Exp -> Gen Opd
 > gen (Add x y) = do
@@ -115,7 +121,7 @@ represent that value of the expression.
 >   return $ Reg r
 > gen (Lit i) = return $ Val i
 
-This sub-computation delivers fresh register names by modifying the state:
+This part of the computation delivers fresh register names by modifying state:
 
 > new :: Gen Reg
 > new = modify succ >> get
@@ -132,7 +138,8 @@ Finally, we compose the phases together, to get a compiler:
 > compile :: String -> Program
 > compile = runGen . gen . parse
 
-A pretty-printer helps visualise the output (see appendix):
+A pretty-printer helps visualise the output (see appendix). I've used
+the % prefix to indicate a register.
 
 ~~~
 λ> putStrLn $ ppProg $ compile "1 + (2 + 3) + 4"
@@ -142,9 +149,11 @@ IAdd %3, %2, 4
 ~~~
 
 To better understand the _operational semantics_, let's define the
-virtual-machine that executes our instruction set.
+virtual-machine that executes our instruction set.  The virtual-machine
+is a stateful computation; we can represent its state as a map of
+register names to integer values.
 
-> type VM = State (IntMap Int)
+> type VM = State (Map Reg Int)
 >
 > exec :: Inst -> VM ()
 > exec (IAdd r o1 o2) = do
@@ -154,13 +163,13 @@ virtual-machine that executes our instruction set.
 >
 > load :: Opd -> VM Int
 > load (Val i) = return i
-> load (Reg r) = gets $ IM.findWithDefault 0 r
+> load (Reg r) = gets $ M.findWithDefault 0 r
 >
 > store :: Reg -> Int -> VM ()
-> store r v = modify (IM.insert r v)
+> store r v = modify (M.insert r v)
 >
-> run :: Program -> IntMap Int
-> run = flip execState IM.empty . mapM_ exec
+> run :: Program -> Map Reg Int
+> run = flip execState M.empty . mapM_ exec
 
 Now we can visualise all the register contents:
 
