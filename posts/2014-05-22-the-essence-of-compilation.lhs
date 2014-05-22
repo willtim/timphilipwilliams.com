@@ -178,6 +178,10 @@ Now we can visualise all the register contents:
 fromList [(1,5),(2,6),(3,10)]
 ~~~
 
+\
+
+Note: the literal haskell for this entire post can be found [here](https://raw.githubusercontent.com/willtim/timphilipwilliams.com/master/posts/2014-05-22-the-essence-of-compilation.lhs).
+
 * * * * * * * *
 
 References
