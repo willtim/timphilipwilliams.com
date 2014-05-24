@@ -109,8 +109,8 @@ function on the AST. When given an expression, it returns a
 computation that when run, emits an ordered list of instructions as a
 side-effect and yields an operand result.  The operand result only
 makes sense in the context of the previously emitted statements; and
-will ultimately represent the value of the expression on instruction
-execution.
+will ultimately represent the value of the expression during
+execution time.
 
 > gen :: Exp -> Gen Opd
 > gen (Add x y) = do
@@ -187,8 +187,8 @@ Note: the literal haskell for this entire post can be found [here](https://raw.g
 References
 ----------
 
-[1] G. Hutton, “Fold and unfold for program semantics,” ACM SIGPLAN Notices, vol. 34, no. 1, pp. 280–288, Jan. 1999.\
-[2] [LLVM Language Reference](http://llvm.org/docs/LangRef.html)
+\[1\] G. Hutton, “Fold and unfold for program semantics,” ACM SIGPLAN Notices, vol. 34, no. 1, pp. 280–288, Jan. 1999.\
+\[2\] [LLVM Language Reference](http://llvm.org/docs/LangRef.html)
 
 
 Appendix

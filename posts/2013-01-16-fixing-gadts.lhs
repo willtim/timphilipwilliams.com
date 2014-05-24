@@ -130,7 +130,7 @@ recursion schemes defined for functors, such as cata above. When we tie the
 recursive knot, ExprF must become the type constructor Expr which is
 parametrised by the type (index) of the expression it represents. The type ExprF
 is therefore parametrised by a type constructor and the expression type.  So how
-do we fix it? Pun intended. It turns out that we need a higher-order version of
+do we fix it?  It turns out that we need a higher-order version of
 Fix, "HFix".  Note the pattern in the kind signatures below, we obtain the kind
 signature required for HFix by substituting `(* -> *)` for `*` in Fix. Redundant
 brackets have been added for clarity.
@@ -273,7 +273,7 @@ method:
 > -- | Higher-order analogue of Foldable
 > class HFoldable (h :: (* -> *) -> * -> *) where
 >   hfoldMap :: Monoid m => (forall b. f b -> m) -> h f a -> m
- 
+
 > instance HFoldable ExprF where
 >   hfoldMap _ (Const _)    = mempty
 >   hfoldMap f (Add x y)    = f x <> f y
@@ -535,9 +535,10 @@ GADTs can be found here [3]. Finally, the literal haskell for this post can be f
 References
 ----------
 
-[1] Richard Bird and Lambert Meertens. “Nested Datatypes” (1998): 52–67.\
-[2] Alexey Rodriguez, Stefan Holdermans, Andres Löh, Johan Jeuring. “Generic programming with fixed points for mutually recursive datatypes” ICFP 2009.\
-[3] Johann, Patricia, and Neil Ghani. “Foundations for Structured Programming with GADTs.” ACM SIGPLAN Notices 43, no. 1 (January 14, 2008): 297.\
+\[1\] Richard Bird and Lambert Meertens. “Nested Datatypes” (1998): 52–67.\
+\[2\] Alexey Rodriguez, Stefan Holdermans, Andres Löh, Johan Jeuring. “Generic programming with fixed points for mutually recursive datatypes” ICFP 2009.\
+\[3\] Johann, Patricia, and Neil Ghani. “Foundations for Structured Programming with GADTs.” ACM SIGPLAN Notices 43, no. 1 (January 14, 2008): 297.\
+
 
 [^1]: In category theory parlance, (Fix f :: *, unFix :: f (Fix f) -> Fix f) is
 the *initial algebra* in the category of F-algebras, for which there is a unique
