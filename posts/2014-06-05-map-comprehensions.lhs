@@ -81,7 +81,6 @@ some extensions and import some modules:
 
 > import Prelude hiding (Monad(..), fmap, sum, head, tail)
 > import Data.Map (Map)
-> import GHC.Prim
 > import qualified Data.Map as Map
 > import Data.Monoid
 
@@ -90,7 +89,7 @@ Heterogeneous Lists using Data Kinds
 ------------------------------------
 
 Let's roll our own simple HList implementation using the [DataKinds][DataKinds]
-extension. We need a type-level append and a value-level append.
+extension. We will need a type-level append and a value-level append.
 
 > -- | The heterogenous list
 > data HList :: [*] -> * where
@@ -127,7 +126,7 @@ Now we can compute the union of two key-attributes. For example:
 The Map Comprehension
 ---------------------
 
-To write a map comprehension, we'll use the the RebindableSyntax and
+To write a map comprehension, we will use the the RebindableSyntax and
 MonadComprehensions extensions. In theory we could bind this syntax to
 the methods in an indexed monad class. It should also be possible to
 make Map instances of an indexed functor and indexed monad class
@@ -141,7 +140,7 @@ First, some useful type and constraint synonyms:
 
 A Map is an indexed functor, whereby the fmap operation does not
 change the index type. This is consistent with Data.Map.map which
-leaves the keys alone::
+leaves the keys alone:
 
 > -- | projection
 > fmap :: Key k => (v -> v') -> Map (K k) v -> Map (K k) v'
@@ -197,18 +196,18 @@ of the original keys. The values are exactly what we asked for, which
 in this instance, is also a cartesian product. I've also taken the liberty
 of formatting the output, for ease of reading.
 
-From the above example we can see that a map comprehension takes care
-of deriving the key attributes for us. It is more restrictive than a
-list comprehension and Map.fromList, as we cannot create arbitrary
+From the above example, we can see that a map comprehension takes care
+of deriving key attributes for us. It is more restrictive than combining a
+list comprehension with Map.fromList, as we cannot create arbitrary
 keys.
 
-To filter out values, let's rebind the guard function:
+To filter out values, let's rebind the monadic guard function:
 
 > guard :: Bool -> Map (K '[]) ()
 > guard True  = return ()
 > guard False = Map.empty
 
-Which we can use in the comprehension syntax:
+Now we can use guards in the comprehension syntax:
 
 >
 > -- | guards filter on values, they cannot access keys
@@ -228,13 +227,13 @@ fromList [("bar":."baz":.Z, 5)
 
 Again this is more restrictive than a list comprehension, but the
 restriction is useful, it forces the user out of the comprehension
-guard syntax if they want to filter by key. In other words, you cannot
+guard syntax, if they want to filter by key. In other words, you cannot
 use the comprehension guard syntax to represent an inefficient
 relational inner-join.
 
-An efficient inner-join would need an auxiliary function such as the one
-below. Again, we use an HList for value attributes, so that we can join
-them together.
+An efficient inner-join would need to be accomplished using an
+auxiliary function such as the one below. Again, we use an HList for
+value attributes, so that we can append them together.
 
 > innerJoin
 >   :: (Key k, Key k') =>
@@ -258,7 +257,7 @@ functions need to be coupled with grouping clauses. If we don't have
 this restriction, we are free to completely separate aggregation from
 grouping.
 
-Note that groupWith applied to a key constructor, yields a grouping
+Note that 'groupWith' when applied to a key constructor, yields a grouping
 function that conceptually is dual to concatenation (monadic join), though
 that's not quite the case here as we do not split up the input key.
 
@@ -283,7 +282,7 @@ The [TransformListComp][TransformListComp] extension allows us to use
 SQL-like "group by" clauses in our monad comprehensions. In the
 example below, we group and count the numeric values from an input
 map. A rather idiosyncratic feature of the TransformListComp
-extension, is that the variable `x` gets rebound to be the grouping
+extension is that the variable `x` gets rebound to be the grouping
 result, in this case a map from the grouping key to the group. Here
 the rebinding is convenient and we can simply call 'count' on it to
 perform an aggregation.
@@ -340,7 +339,7 @@ simple function composition of a flat grouping function 'GroupBy':
 
 We can compose the groupBy function according to how many dimensions
 we want to pivot on. This works because the aggregation function
-passed to GroupBy can itself be another grouping operation.  Such a
+passed to 'GroupBy' can itself be another grouping operation.  Such a
 transformation would be very useful if we were, for example,
 converting a flat CSV file into a hierarchical XML file.
 
