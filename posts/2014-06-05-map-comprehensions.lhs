@@ -91,7 +91,7 @@ Heterogeneous Lists using Data Kinds
 Let's roll our own simple HList implementation using the [DataKinds][DataKinds]
 extension. We will need a type-level append and a value-level append.
 
-> -- | The heterogenous list
+> -- | The heterogeneous list
 > data HList :: [*] -> * where
 >   Z    :: HList '[]
 >   (:.) :: t -> HList ts -> HList (t ': ts)
