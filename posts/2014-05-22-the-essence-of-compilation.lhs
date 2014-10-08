@@ -1,7 +1,7 @@
 ---
 title: The Essence of Compilation
 published: 2014-05-22T08:30:00Z
-tags: haskell, compiler, tutorial
+tags: haskell, compilers, tutorial
 description: A toy compiler and virtual-machine in less than fifty lines of haskell.
 ---
 
