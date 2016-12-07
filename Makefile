@@ -1,16 +1,13 @@
 
 site: _site
 
-hakyll: site.hs
-	ghc --make site.hs -optl -w
-
-_site: hakyll
-	./site rebuild
+_site: site.hs
+	chcp 65001
+	stack runghc site.hs rebuild
 
 sync: _site
 	s3cmd -P --delete-removed sync _site/ s3://www.timphilipwilliams.com/
 
 clean:
-	find . -name '*.o' | xargs rm
-	rm site.hi
-	rm site
+	rm -r _site
+	rm -r _cache
