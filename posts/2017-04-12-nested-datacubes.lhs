@@ -8,7 +8,7 @@ description: "Multi-dimensional aggregation and grouping using nested datacubes 
 Introduction
 ------------
 
-Multi-dimensional aggregation and grouping are common forms of analysis traditionally done with SQL databases, OLAP tools (Online Analytical Processing) and/or Excel pivot tables. These traditional tools use a /flat/ table representation, whereby /tuples/ are mapped to /measures/ without any nesting. Increasingly, users are using general purpose programming languages for further offline analysis: languages like R, Python, Scala and Haskell.  These often give us the opportunity to work with /nested/ (inductive) structures, which functional languages like Haskell are particularly good at dealing with.  Hopefully this post will prove that point.
+Multi-dimensional aggregation and grouping are common forms of analysis traditionally done with SQL databases, OLAP tools (Online Analytical Processing) and/or Excel pivot tables. These traditional tools use a *flat* table representation, whereby *tuples* are mapped to *measures* without any nesting. Increasingly, users are using general purpose programming languages for further offline analysis: languages like R, Python, Scala and Haskell.  These often give us the opportunity to work with *nested* (inductive) structures, which functional languages like Haskell are particularly good at dealing with.  Hopefully this post will prove that point.
 
 
 Flat versus nested
