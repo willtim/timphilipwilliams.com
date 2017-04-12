@@ -152,8 +152,13 @@ pandocWriteOptions = defaultHakyllWriterOptions
      , writerReferenceLinks = True
     }
 
+pandocReadOptions :: ReaderOptions
+pandocReadOptions = defaultHakyllReaderOptions
+    { readerExtensions =  S.delete Ext_markdown_in_html_blocks
+                            (readerExtensions defaultHakyllReaderOptions)
+    }
 
-myPandocCompiler = pandocCompilerWith defaultHakyllReaderOptions pandocWriteOptions
+myPandocCompiler = pandocCompilerWith pandocReadOptions pandocWriteOptions
 
 -- | Default setup is for individual post pages
 myDefaultCtx :: Context String

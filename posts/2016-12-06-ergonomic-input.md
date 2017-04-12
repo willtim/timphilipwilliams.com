@@ -31,7 +31,7 @@ My criteria for placement of the modifier keys was as follows:
 * Ctrl and Alt easily pressed together;
 * Symmetrical modifiers, in order to reduce "chording" keys on one hand.
 
-Enter and Tab I chose to keep largely in their usual places. I use these keys less than Ctrl and Alt; and don't mind using my pinky to get to them. CapsLock and Insert are unfortunately my casualties. I cannot type these at all now, but at least I can now touch type many more of the keys that I still have.
+Enter and Tab I chose to keep close to their usual places, but moved to the home row. I use these keys less than Ctrl and Alt; and don't mind using my pinky to get to them. CapsLock and Insert are unfortunately my casualties. I cannot type these at all now, but at least I can now touch type many more of the keys that I still have.
 
 ![My Kinesis Advantage2 layout, with the re-mappings highlighted in yellow.](../img/AdvantageLayoutTim.gif "UK QWERTY optimised for Emacs with symmetrical modifiers")
 
@@ -39,17 +39,19 @@ When exported as a text file from the Advantage2, my mappings look like this:
 
 ~~~
 [=]>[`]
-[caps]>[\]
+[tab]>[\]
+[caps]>[tab]
 [up]>[down]
 [down]>[up]
 [`]>[=]
 [lalt]>[delete]
 [ralt]>[lwin]
-[\]>[enter]
+[\]>[']
 [lctrl]>[lalt]
 [delete]>[lctrl]
 [rctrl]>[lalt]
 [enter]>[rctrl]
+[']>[enter]
 ~~~
 
 \

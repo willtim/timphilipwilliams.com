@@ -19,7 +19,7 @@ W.  I’ve posted some example toy implementations on github for both
 records and effect-tracking [here][#code].
 
 \
-![duck typing done right](/img/lego-duck.png)\
+![duck typing done right](/img/lego-duck.jpg)\
 \
 
 

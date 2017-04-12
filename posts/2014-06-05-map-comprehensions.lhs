@@ -2,7 +2,7 @@
 title: Map Comprehensions
 published: 2014-06-05T08:30:00Z
 tags: haskell, maps, indexed monads, query, sql, relational algebra, comprehensions, hlist
-description: An idea for a useful indexed monad: the map comprehension.
+description: "An idea for a useful indexed monad: the map comprehension."
 ---
 
 Introduction
@@ -95,24 +95,24 @@ extension. We will need a type-level append and a value-level append.
 > data HList :: [*] -> * where
 >   Z    :: HList '[]
 >   (:.) :: t -> HList ts -> HList (t ': ts)
->
+
 > infixr 5 :.
->
+
 > -- | HList type-level append
 > type family (m :: [*]) ++ (n :: [*]) :: [*]
 > type instance '[]       ++ ys = ys
 > type instance (x ': xs) ++ ys = x ': (xs ++ ys)
->
+
 > -- | HList value-level append
 > (++.) :: HList as -> HList bs -> HList (as ++ bs)
 > Z         ++. ys = ys
 > (x :. xs) ++. ys = x :. (xs ++. ys)
->
+
 > infixr 5 ++.
->
+
 > head :: HList (a ': as) -> a
 > head (x :. _) = x
->
+
 > tail :: HList (a ': as) -> HList as
 > tail (_ :. xs) = xs
 
@@ -209,14 +209,14 @@ To filter out values, let's rebind the monadic guard function:
 
 Now we can use guards in the comprehension syntax:
 
->
+
 > -- | guards filter on values, they cannot access keys
 > example2 = [ x + y
 >            | x <- Map.fromList [ ("foo":.Z, 1), ("bar":.Z, 2) ]
 >            , y <- Map.fromList [ ("baz":.Z, 3), ("qux":.Z, 4) ]
 >            , x + y < 6
 >            ]
->
+
 
 ~~~
 λ> example2
@@ -244,7 +244,7 @@ value attributes, so that we can append them together.
 > innerJoin f m1 m2 = Map.foldrWithKey doRow Map.empty m1
 >   where
 >     doRow k v m = maybe m (\v' -> Map.insert k (v ++. v') m) $ Map.lookup (f v) m2
->
+
 
 Aggregation and Grouping
 ------------------------
@@ -268,7 +268,7 @@ that's not quite the case here as we do not split up the input key.
 >    where
 >      group k v = Map.insertWith Map.union (f v) (Map.singleton k v)
 
-> -- | aggregate or reduce
+> -- | also known as reduce or fold
 > aggregate :: Monoid m => Map (K k) m -> m
 > aggregate = Map.foldr mappend mempty
 
@@ -293,7 +293,7 @@ perform an aggregation.
 >                                , ("baz":.Z, 2), ("qux":.Z, 3)]
 >            , then group by (x:.Z) using groupWith
 >            ]
->
+
 
 ~~~
 λ> example3
@@ -316,7 +316,7 @@ compound grouping key:
 >   , (3:.Z, "US68389X1054":."John":. 2.0:.Z)
 >   , (4:.Z, "US0378331005":."Joe" :. 5.0:.Z)
 >   , (5:.Z, "US5949181045":."John":.10.0:.Z) ]
->
+
 > orderIsin   = head        -- ^ we need some Template Haskell here
 > orderTrader = head . tail
 > orderAmt    = head . tail . tail
