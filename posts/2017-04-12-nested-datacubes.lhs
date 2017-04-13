@@ -14,7 +14,7 @@ Multi-dimensional aggregation and grouping are common forms of analysis traditio
 Flat versus nested
 ------------------
 
-Let's give an example of a flat dataset:
+Let's start with an example flat dataset:
 
 \
 
@@ -55,7 +55,7 @@ Before we model the above in Haskell, let's import some modules and define some 
 >   }
 
 It is idiomatic in Haskell to use a nominal record type for a row, we'll call it 'Trade'.
-We can then model the flat table structure above as a list of Trade: [Trade], or for the purists among us, we could alternatively use: Set Trade.
+We can then model the flat table structure above as a list of Trade: [Trade]. Even better would be to also model the uniqueness constraint using a primary key: Map TradeId Trade.
 
 The flat structure does make a good canonical representation; and we could always add additional structures for efficiency (e.g. indexes). However, a nested representation offers quite a few advantages:
 
@@ -71,7 +71,7 @@ A better monoid instance for Data.Map
 
 Before we create a nested dataset from the above rows, we should fix the monoid instance for Data.Map. The newtype *MMap* below has a strictly more general monoid instance. The monoid behaviour for Data.Map can be recovered by using e.g. the First Monoid from Data.Monoid. MMap deserves its own Module and qualified import, but here I'll just use the Data.Map API with explict wrapping/unwrapping to and from MMap.
 
-Note that the complexity of unionWith is important. Data.HashMap from the unordered-containers package states a complexity of O(n+m) for unionWith, which would always give us a quadratic implementation of mconcat.
+Note that the complexity of unionWith is important. Unfortunately, Data.HashMap from the unordered-containers package states a complexity of O(n+m) for unionWith, which would always give us a quadratic implementation of mconcat.
 
 > type Key = Ord
 
@@ -85,7 +85,7 @@ Note that the complexity of unionWith is important. Data.HashMap from the unorde
 >     mempty  = MMap mempty
 >     -- Note the complexity of unionWith is O(m*log(n/m + 1)), m <= n
 >     mappend a b = MMap $ Map.unionWith mappend (unMMap a) (unMMap b)
->     -- We must have foldr here to get satisfactory complexity
+>     -- We must then have foldr here to get satisfactory complexity
 >     mconcat = foldr mappend mempty
 
 > instance Foldable (MMap k) where
@@ -95,7 +95,7 @@ Note that the complexity of unionWith is important. Data.HashMap from the unorde
 Nested groupings
 ----------------
 
-To create a nested dataset, we'll need a grouping transform. GHC calls this groupWith for lists, which it uses for the generalized list comprehensions extension. It's defined in GHC.Exts and the type signature is:
+To create a nested dataset, we'll need a grouping operator. GHC calls this groupWith for lists, which it uses for the generalized list comprehensions extension ([TransformListComp][TransformListComp]). It's defined in GHC.Exts and the type signature is:
 
 ~~~{.haskell}
 groupWith :: Ord b => (a -> b) -> [a] -> [[a]]
@@ -111,7 +111,7 @@ Let's define an equivalent version for MMap.
 >    where
 >      group k v = Map.insertWith Map.union (f v) (Map.singleton k v)
 
-This does require an initial MMap. A convenient choice here is: MMap TradeId Trade, which models a primary key. It is not yet a grouping, as the element can only be a single Trade record. Perhaps a more satisfiy choice, albeit less convenient in Haskell, would be to use an HList or extensible record for the keys. This would allow us to use compound-keys and operations on those keys.
+This does require an initial MMap. A convenient choice here is: MMap TradeId Trade, which models the primary key. It is not yet a grouping, as the element can only be a single Trade record. Perhaps a more satisfiy choice, albeit less convenient in Haskell, would be to use an HList or extensible record for the keys. This would allow us to use compound-keys with various associated operations on those keys.
 
 Let's go with groupWith and perform a grouping operation to create a level of nesting. For example, to group according to 'Location', we would use:
 
@@ -236,7 +236,7 @@ Now we have the necessary operator to rollup the innermost grouping of our cube:
 >           -> Location :. Year :. Month :. Day :. Sum Double
 > myCubeSum = myCube (rollup $ Sum . tradeValue)
 
-Applying the above aggregation 'myCubeSum' to our test data (of type 'Map TradeId Trade'), would yield the following structure:
+Applying the above aggregation 'myCubeSum' to our test data (of type 'MMap TradeId Trade'), would yield the following structure:
 
 \
 
@@ -338,13 +338,15 @@ Note: the literal haskell for this entire post can be found [here](https://raw.g
 
 * * * * * * * *
 
-Footnotes
----------
+References
+----------
 
 \[1\] [Map Comprehensions][MapComp]
 
+\[2\] [TransformListComp][TransformListComp]
 
 [MapComp]: 2014-06-05-map-comprehensions.html (Map Comprehensions)
+[TransformListComp]: https://downloads.haskell.org/~ghc/8.0.1/docs/html/users_guide/glasgow_exts.html#generalised-sql-like-list-comprehensions (Generalised (SQL-like) List Comprehensions)
 
 \
 
