@@ -310,10 +310,22 @@ Note that aggregations can have types that look similar to unnesting/ungrouping,
 > rollup1 = fmap . foldMap
 
 
-<h4>Parallel Aggregation</h4>
+Parallel Aggregation
+--------------------
 
 Since MMap has the general monoid instance we defined earlier, our cube aggregations will also all have monoid instances (by induction).
-This means we can split the input data up, compute partial cubes for each input chunk in parallel and then mconcat/reduce them to obtain the final cube.
+This means we can compute partial cubes for input chunks in parallel and then mconcat/reduce them to obtain the final cube.
+
+> mapReduce :: (Monoid m) => (v -> m) -> [v] -> m
+> mapReduce f = mconcat . map f -- parallel map
+
+~~~{.haskell}
+λ> :t mapReduce myCubeSum
+mapReduce myCubeSum
+  :: Key k =>
+     [k :. Trade]
+     -> Location :. Year :. Month :. Day :. Sum Double
+~~~
 
 
 Subcubes
