@@ -13,7 +13,7 @@ recursion schemes that work over many custom data types. In this post, I will
 attempt to explain how we have applied this technique to language syntax trees
 defined using Generalised Algebraic Data Types (GADTs). The jury is still out on
 whether the additional type-safety provided by GADTs is worth the added
-inconvenience of working with them. I will let the reader decide for themselves
+inconvenience of working with them in Haskell. I will let the reader decide for themselves
 rather than offer an opinion!  Certainly Haskell and its libraries continue to
 improve in this area all the time.
 
@@ -76,10 +76,10 @@ nodes representing types (objects) and the edges representing functions
 \
 
 The point of such datatype generic programming is to define the recursion scheme
-(i.e. the traversal strategy) once for all pattern functors; only the algebras
-need be specific to the datatype. We could just implement, for example, a
+(i.e. the fold function) once for all pattern functors; only the algebras
+need be specific to the datatype. We could implement, for example, a
 catamorphism for every datatype we define, but this approach would quickly get
-expensive when working with many additional, sometimes complex, recursion
+out-of-hand when working with many additional, sometimes complex, recursion
 schemes and large datatype definitions.
 
 Let's now introduce booleans into our expression syntax to support equality
@@ -130,7 +130,7 @@ recursion schemes defined for functors, such as cata above. When we tie the
 recursive knot, ExprF must become the type constructor Expr which is
 parametrised by the type (index) of the expression it represents. The type ExprF
 is therefore parametrised by a type constructor and the expression type.  So how
-do we fix it?  It turns out that we need a higher-order version of
+do we fix this?  It turns out that we need a higher-order version of
 Fix, "HFix".  Note the pattern in the kind signatures below, we obtain the kind
 signature required for HFix by substituting `(* -> *)` for `*` in Fix. Redundant
 brackets have been added for clarity.
@@ -206,24 +206,21 @@ The hcata above, folds to a functor f and not to a value. So to write an
 evaluation algebra we will need an identity functor:
 
 > newtype I x = I { unI :: x }
->
+
 > eval :: Expr a -> a
 > eval = unI . hcata evalAlg
->
+
 > evalAlg :: ExprF I :~> I
 > evalAlg (Const i)    = I i
-> evalAlg (Add x y)    = I $ unI x + unI y
-> evalAlg (Mul x y)    = I $ unI x * unI y
-> evalAlg (Cond x y z) = I $ if unI x then unI y else unI z
-> evalAlg (IsEq x y)   = I $ unI x == unI y
+> evalAlg (Add x y)    = (+) <$> x <*> y
+> evalAlg (Mul x y)    = (-) <$> x <*> y
+> evalAlg (Cond x y z) = (\c t f -> if c then t else f) <$> x <*> y <*> z
+> evalAlg (IsEq x y)   = (==) <$> x <*> y
 
-The newtype wrapping and unwrapping is rather irratating, but has no runtime
-cost as the newtype constructors are removed during compilation. We could have
-defined Functor and Applicative instances for `I` and lifted the application of
-e.g. `(+)` into `I`; but without idiom brackets[^2], I personally don't think
-this makes the above more readable.  The GHC ViewPatterns extension can also be
-used to move the unwrapping noise to the left handside of the equations, if
-preferred.
+Note that I have assumed Functor and Applicative instances for `I` and
+lifted the application of operators, such as e.g. `(+)` into
+`I`. Personally I would rather use idiom brackets[^2], but they are
+not available in GHC Haskell.
 
 Let's test it with some example expressions:
 
@@ -253,11 +250,11 @@ we'll need `K` in order to define a pretty-printer:
 > ppr = unK . hcata alg where
 >   alg :: ExprF (K Doc) :~> K Doc
 >   alg (Const i)    = K . text $ show i
->   alg (Add x y)    = K . parens $ unK x <+> text "+" <+> unK y
->   alg (Mul x y)    = K . parens $ unK x <+> text "*" <+> unK y
->   alg (Cond x y z) = K $ text "if" <+> unK x <+>
->                      text "then" <+> unK y <+> text "else" <+> unK z
->   alg (IsEq x y)   = K $ unK x <+> text "==" <+> unK y
+>   alg (Add x y)    = (\x y -> parens $ x <+> text "+" <+> y) <$> x <*> y
+>   alg (Mul x y)    = (\x y -> parens $ x <+> text "*" <+> y) <$> x <*> y
+>   alg (Cond x y z) = (\x y z -> text "if" <+> x <+> text "then" <+> y <+> text "else" <+> z)
+>                          <$> x <*> y <*> z
+>   alg (IsEq x y)   = (\x y -> x <+> text "==" <+> y) <$> x <*> y
 
 ~~~
 λ> ppr x
@@ -332,7 +329,7 @@ For our ExprF datatype, we need the following instances:
 >   Mul x1 x2 == Mul y1 y2          = heq x1 y1 && heq x2 y2
 >   Cond x1 x2 x3 == Cond y1 y2 y3  = heq x1 y1 && heq x2 y2 && heq x3 y3
 >   IsEq x1 x2 == IsEq y1 y2        = heq x1 y1 && heq x2 y2
->
+
 > instance HEq r => HEq (ExprF r) where heq = (==)
 > instance Eq (Expr a) where (==) = (==) `on` unHFix
 
@@ -405,7 +402,7 @@ method.
 
 > instance HEqHet Expr where
 >   heqIdx x y = heqIdx (getType x) (getType y)
->
+
 > getType :: Expr a -> Type a
 > getType e = case unHFix e of
 >   Const {}   -> TInt
@@ -413,12 +410,12 @@ method.
 >   Mul   {}   -> TInt
 >   Cond _ e _ -> getType e
 >   IsEq  {}   -> TBool
->
+
 > instance HEqHet Type where
 >   heqIdx TBool TBool = Just Refl
 >   heqIdx TInt TInt   = Just Refl
 >   heqIdx _ _         = Nothing
->
+
 > instance HEq Type where
 >   heq TBool TBool = True
 >   heq TInt  TInt  = True
@@ -475,16 +472,16 @@ higher-order analogues:
 > -- | The product of functors
 > data (f :*: g) a = (:*:) { hfst :: f a, hsnd :: g a }
 > infixr 6 :*:
->
+
 > -- | The higher-order analogue of (&&&) for functor products
 > (&&&&) :: (f :~> g) -> (f :~> g') -> f :~> (g :*: g')
 > (&&&&) u v x = u x :*: v x
 > infixr 3 &&&&
->
+
 > -- | Generalised unzip for higher-order functors
 > hfunzip :: HFunctor h => h (f :*: g) :~> (h f :*: h g)
 > hfunzip = hfmap hfst &&&& hfmap hsnd
->
+
 > -- | paramorphism for higher-order functors
 > hpara :: HFunctor h => (h (f :*: HFix h) :~> f) -> (HFix h :~> f)
 > hpara psi = psi . hfmap (hpara psi &&&& id) . unHFix
@@ -511,7 +508,7 @@ The implementation of our tracing evaluator is as follows:
 >         m  = hfoldMap unK  $ hr
 >         e  = HFix he
 >         v' = mkValue (getType e) v
->
+
 > mkValue :: Type a -> a -> Value
 > mkValue TBool x = VBool x
 > mkValue TInt  x = VInt  x
