@@ -2,7 +2,7 @@
 title: Structural Typing for Structured Products
 published: 2014-10-08T19:10:00Z
 tags: types, type systems, row polymorphism, structural typing, DSLs, compilers
-description: Slides and some example code for the Haskell Exchange talk.
+description: Slides and some example code for the Haskell Exchange 2014 talk.
 ---
 
 Today at the **Haskell Exchange 2014**, Peter Marks and I presented
