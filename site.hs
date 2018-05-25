@@ -67,6 +67,16 @@ main = hakyllWith config $ do
               >>= applyTemplates ["default", "scaffold"] ctx
               >>= relativizeUrls
 
+    match "projects.html" $ do
+        route   idRoute
+        let ctx =  constField "title" "Projects"
+                <> constField "projectsurl" nullLink
+                <> constField "projectsclass" "active"
+                <> myDefaultCtx
+        compile $ getResourceBody
+              >>= applyTemplates ["default", "scaffold"] ctx
+              >>= relativizeUrls
+
     match "aboutme.html" $ do
         route   idRoute
         let ctx =  constField "title" "About me"
@@ -147,14 +157,14 @@ nullLink = "javascript:void(0)"
 --   and disable the leading >
 pandocWriteOptions :: WriterOptions
 pandocWriteOptions = defaultHakyllWriterOptions
-    {  writerExtensions     = S.delete Ext_literate_haskell
+    {  writerExtensions     = disableExtension Ext_literate_haskell
                                 (writerExtensions defaultHakyllWriterOptions)
      , writerReferenceLinks = True
     }
 
 pandocReadOptions :: ReaderOptions
 pandocReadOptions = defaultHakyllReaderOptions
-    { readerExtensions =  S.delete Ext_markdown_in_html_blocks
+    { readerExtensions = disableExtension Ext_markdown_in_html_blocks
                             (readerExtensions defaultHakyllReaderOptions)
     }
 
@@ -168,10 +178,12 @@ myDefaultCtx = mconcat [
       , constField "homeurl" "/index.html"
       , constField "postsclass"  ""
       , constField "slidesclass" ""
+      , constField "projectsclass" ""
       , constField "aboutmeclass"  ""
       , constField "tagsclass"  ""
       , constField "postsurl"  "/"
       , constField "slidesurl"  "/slides.html"
+      , constField "projectsurl"  "/projects.html"
       , constField "aboutmeurl"  "/aboutme.html"
       , constField "tagsurl"  "/tags.html"
       , constField "author" "Tim Williams"
