@@ -13,6 +13,7 @@ import qualified Data.Set as S
 
 import Text.Pandoc
 import Hakyll
+import Hakyll.Images (loadImage, scaleImageCompiler)
 
 config :: Configuration
 config = defaultConfiguration
@@ -124,6 +125,12 @@ main = hakyllWith config $ do
     match "js/*.js" $ do
         route   idRoute
         compile copyFileCompiler
+
+    -- for the Minecraft images
+    match "img/minecraft/**.png" $ do
+        route idRoute
+        compile $ loadImage
+           >>= scaleImageCompiler 1024 768
 
     match "img/*" $ do
         route   idRoute

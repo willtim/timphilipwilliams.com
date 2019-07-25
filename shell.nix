@@ -4,7 +4,7 @@ let
 
   inherit (nixpkgs) pkgs;
 
-  f = { mkDerivation, hakyll
+  f = { mkDerivation, hakyll, hakyll-images
       }:
       mkDerivation {
         pname = "timphilipwilliams.com";
@@ -13,7 +13,7 @@ let
         isLibrary = false;
         isExecutable = true;
         executableHaskellDepends = [
-            hakyll
+            hakyll hakyll-images
         ];
         license = "none";
       };
