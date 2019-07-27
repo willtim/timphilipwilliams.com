@@ -514,7 +514,7 @@ More Castles
 We can easily generate lots of variations on the castle theme, by changing the function parameters.
 For example, a Germanic castle, using our earlier Germanic turret:
 
-![Germanic Castle](../img/minecraft/germanic_castle.png "Germanic Castle")
+![Germanic Castle](../img/minecraft/germanic_castle2.png "Germanic Castle")
 
 A desert castle would be made of sandstone rather then cobblestone, thus we need a way to substitute a particular block kind for another:
 
