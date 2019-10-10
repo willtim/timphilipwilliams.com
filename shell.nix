@@ -1,8 +1,8 @@
-{ nixpkgs ? import <nixpkgs> {}, compiler ? "default" }:
+{ nixos ? import <nixos> {}, compiler ? "default" }:
 
 let
 
-  inherit (nixpkgs) pkgs;
+  inherit (nixos) pkgs;
 
   f = { mkDerivation, hakyll, hakyll-images
       }:

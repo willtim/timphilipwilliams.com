@@ -42,7 +42,7 @@ Before we model the above in Haskell, let's enable some extensions and import so
 > import           Text.Printf
 > import qualified Data.Map as Map
 
-We will also use lenses to represent the three dimensions. This will allow us to write code that can read and modify an abstracted dimension using only one function parameter, rather than passing getters and setters around. The only lens library functions we will use are as follows:
+We will also use lenses to represent the three dimensions. This will allow us to write code that can read and update an abstracted dimension using only one function parameter, rather than passing getters and setters around. The only lens library functions we will use are as follows:
 
 ~~~{.haskell}
 view :: Lens' a b -> a -> b
@@ -155,9 +155,9 @@ To build structures we will need *combinators* that provide us with repetition. 
 
 I then used `repeat` to define a combinator that will replicate a structure using a particular spacing (probably because I had castle *crenellations* in mind!).
 
-> -- | replicate structure 'n' times with a spacing 'i' in dimension 'd'.
+> -- | replicate structure 'n' times with a spacing 's' in dimension 'd'.
 > replicate :: Dimension -> Int -> Int -> Blocks -> Blocks
-> replicate d i = repeat (move d i)
+> replicate d s = repeat (move d s)
 
 A common use for `replicate` would be to define a simple line of blocks, which we will default to cobblestone:
 
@@ -168,15 +168,12 @@ A common use for `replicate` would be to define a simple line of blocks, which w
 Similarly we can define walls, floors and squares of cobblestone:
 
 > wall :: Dimension -> Int -> Int -> Blocks
-> wall d w h
->     = replicate y 1 h
->     . replicate d 1 w
->     $ zero # cobblestone
+> wall d w h = replicate y 1 h $ line d w
 
 > floor :: Int -> Int -> Blocks
-> floor wx wz
->     = replicate x 1 wx
->     . replicate z 1 wz
+> floor lx lz
+>     = replicate x 1 lx
+>     . replicate z 1 lz
 >     $ zero # cobblestone
 
 > square :: Int -> Blocks
@@ -188,11 +185,11 @@ Similarly we can define walls, floors and squares of cobblestone:
 >     l d = line d w
 
 > squareWall :: Int -> Int -> Blocks
-> squareWall w h = repeat (move y 1) h (square w)
+> squareWall w h = replicate y 1 h (square w)
 
-> -- | A square of thickness 't' and width 'w'.
-> wideSquare :: Int -> Int -> Blocks
-> wideSquare t w = mconcat
+> -- | A square roof of thickness 't' and width 'w'.
+> squareRoof :: Int -> Int -> Blocks
+> squareRoof t w = mconcat
 >     [ translate i 0 i $ square (w-2*i)
 >     | i <- [0..t-1]
 >     ]
@@ -256,25 +253,33 @@ Before we generate the mcfunction file, we first prune the block list to get rid
 
 Finally here is the "render" function for generating the commands:
 
-> render :: FilePath -> String -> String -> Coord -> Blocks -> IO ()
-> render minecraftDir levelName functionName Coord{..} (prune -> blocks) =
+> data CoordKind = Relative | Absolute
+
+> render :: FilePath -> String -> String -> CoordKind -> Blocks -> IO ()
+> render minecraftDir levelName functionName coordKind (prune -> blocks) =
 >     withFile filePath WriteMode $ \hnd ->
->         forM_ (unBlocks $ translate _x _y _z blocks) $ \(Block Coord{..} kind mstate) ->
->           hPutStrLn hnd $ printf "setblock %s %s %s %s %s"
+>         forM_ (unBlocks blocks) $ \(Block Coord{..} kind mstate) ->
+>           hPutStrLn hnd $ printf
+>               (case coordKind of { Relative -> "setblock ~%s ~%s ~%s %s %s"
+>                                  ; Absolute -> "setblock %s %s %s %s %s" })
 >               (show _x) (show _y) (show _z) kind (maybe "" (\s -> "["++s++"]") mstate)
 >   where
 >     filePath = foldr (</>) (functionName ++ ".mcfunction")
 >                    [ minecraftDir, "saves", levelName, "datapacks"
 >                    , "haskell", "data", "haskell",  "functions" ]
 
-To render our square turret, first load Minecraft, then enter the level you have the datapack installed into and then press F3 to find your current coordinates. You can then give `render` these coordinates at the haskell prompt:
+Minecraft has a default limit of 65K blocks in an mcfunction file and it's easy to go past this limit when generating large complex structures, fortunately it is possible to increase this limit using the command "/gamerule maxCommandChainLength".
+
+To render our square turret to an "mcfunction" file, use the following at the Haskell prompt:
 
 ~~~{.haskell}
 λ> let t = square_turret 9 15
-λ> render "~/.minecraft" "Castles" "square_turret" (Coord (-763) 4 1305) t
+λ> render "~/.minecraft" "Castles" "square_turret" Relative t
 ~~~
 
-From within Minecraft, press `t` to bring up the prompt and enter the following (tab completion should work).
+To render in absolute coordinates, you will need to translate (and possibly centre) the structure first. Note that F3 can be used in the game to find your current coordinates. The advantage of using absolute coordinates, is that it allows us to re-generate the structure over the top of the previous one to fix any minor issues. We can also remove structures from the game, by re-rendering using `# air` to set all blocks to empty (air).
+
+Now it's time to load Minecraft. Enter the level you have the datapack installed into and press `t` to bring up the prompt. To create the turret at your current position, enter the following (tab completion should work):
 
 ~~~
 /reload
@@ -285,55 +290,57 @@ If Minecraft cannot see the mcfunction file, check that it can see the `[file/ha
 
 ![Square Turret](../img/minecraft/square_turret.png "Square Turret")
 
-Note that to remove the turret from the game, we can re-render it using `# air` to set all blocks to empty (air).
-
 
 Circles, Spirals and Cones
 --------------------------
 
 A square turret obviously works well in Minecraft, but I wondered how effective it would be to attempt to rasterize a circular turret. I tried the simplest implementation I could think of:
 
-> circle :: Int -> Int -> Blocks
-> circle r steps = translate r 0 r $
->     mkBlocks [ Coord x 0 z
+> -- | A circle of radius r in the plane formed by dimensions (d, d'), centered on (r,r).
+> circle :: Dimension -> Dimension -> Int -> Int -> Blocks
+> circle d d' r steps = move d r . move d' r $
+>     mkBlocks [ set d x . set d' z $ Coord 0 0 0
 >              | s <- [1..steps]
->              , let phi = (2*pi*fromIntegral s) / fromIntegral steps :: Double
+>              , let phi = 2*pi*fromIntegral s / fromIntegral steps :: Double
 >                    z   = round $ fromIntegral r * cos phi
 >                    x   = round $ fromIntegral r * sin phi
 >              ]
 
 > circleWall :: Int -> Int -> Int -> Blocks
 > circleWall r h steps =
->     repeat (move y 1) h (circle r steps)
+>     replicate y 1 h (circle x z r steps)
 
 Note that the number of steps can be varied, with low values being useful for circular placement of windows and crenellations. A solid circle is even easier:
 
-> circleFloor :: Int -> Blocks
-> circleFloor r = translate r 0 r $
->     mkBlocks [ Coord x 0 z
+> -- | A filled circle of radius r in the plane formed by dimensions (d, d'), centered on (r,r).
+> solidCircle :: Dimension -> Dimension -> Int -> Blocks
+> solidCircle d d' r = move d r . move d' r $
+>     mkBlocks [ set d x . set d' z $ Coord 0 0 0
 >              | x <- [-r..r]
 >              , z <- [-r..r]
->              , let d = sqrt (fromIntegral $ x*x + z*z) :: Double
->              , d <= fromIntegral r
+>              , let r' = sqrt (fromIntegral $ x*x + z*z) :: Double
+>              , r' <= fromIntegral r
 >              ]
 
-> cylinder :: Int -> Int -> Blocks
-> cylinder r h = repeat (move y 1) h (circleFloor r)
+> -- | A solid cylinder of radius r in the plane formed by dimensions (d, d') and with length along dl.
+> solidCylinder :: Dimension -> Dimension -> Dimension -> Int -> Int -> Blocks
+> solidCylinder d d' dl r h = replicate dl 1 h $ solidCircle d d' r
 
 It would be nice to also create a staircase inside the circular turret, which we can generate using a spiral:
 
+> -- | An upward spiral in the (x,z) plane centered on (r,r).
 > spiral :: Int -> Int -> Int -> Int -> Blocks
 > spiral r h revs steps = translate r 0 r $
 >     mkBlocks [ Coord x y z
 >              | s   <- [1..steps]
->              , let phi = (2*pi*fromIntegral (revs*s)) / fromIntegral steps :: Double
+>              , let phi = 2*pi*fromIntegral (revs*s) / fromIntegral steps :: Double
 >                    z   = round $ fromIntegral r * cos phi
 >                    x   = round $ fromIntegral r * sin phi
 >                    y   = round $ fromIntegral (h*s) / (fromIntegral steps :: Double)
 >              ]
 
-> wideSpiral :: Int -> Int -> Int -> Int -> Int -> Blocks
-> wideSpiral r t h revs steps = mconcat
+> spiralStairs :: Int -> Int -> Int -> Int -> Int -> Blocks
+> spiralStairs r t h revs steps = mconcat
 >     [ translate i 0 i $ spiral (r-i) h revs steps
 >     | i <- [0..t-1]
 >     ]
@@ -342,14 +349,14 @@ My circular turret with a spiral staircase, crenellations, windows and a top flo
 
 > circularTurret :: Int -> Int -> Int -> Blocks
 > circularTurret r h steps = mconcat
->     [ cylinder r h    # air -- clear space
->     , translate 1 0 1 $ wideSpiral (r-1) 3 h 3 (3*steps) -- spiral staircase
+>     [ solidCylinder x z y r h    # air -- clear space
+>     , translate 1 0 1 $ spiralStairs (r-1) 3 h 3 (3*steps) -- spiral staircase
 >     , circleWall r h steps
->     , translate (-1) h (-1) (circleFloor r' <> -- upper floor
+>     , translate (-1) h (-1) (solidCircle x z r' <> -- upper floor
 >                              circleWall r' 2 (2 * steps) <> -- upper wall
->                              move y 2 (circle r' (steps `div` 2))) -- crenellations
+>                              move y 2 (circle x z r' (steps `div` 2))) -- crenellations
 >     , translate 2 h 2 $ floor 3 3 # air -- exit for staircase
->     , move y 1 $ repeat (move y (h `div` 3)) 3 (circle r 4) # air -- windows
+>     , move y 1 $ replicate y (h `div` 3) 3 (circle x z r 4) # air -- windows
 >     ]
 >   where r' = r + 1
 
@@ -364,9 +371,10 @@ In Minecraft, the circular turret has rasterized reasonably well and the spiral 
 
 My kids prefer the Germanic style of castle, most often seen in Disney movies, so I had a go at adding a conic top to the circular turret:
 
+> -- | An upright hollow cone in the (x,z) place centered on (r,r).
 > cone :: Int -> Int -> Int -> Blocks
 > cone r h steps = mconcat
->     [ translate (r - r') y (r - r') $ circle r' steps
+>     [ translate (r - r') y (r - r') $ circle x z r' steps
 >     | y <- [0..h]
 >     , let r' = round $ fromIntegral (r*(h-y)) / (fromIntegral h :: Double)
 >     ]
@@ -375,7 +383,7 @@ My kids prefer the Germanic style of castle, most often seen in Disney movies, s
 > circularTurret_germanic r h steps =
 >     circularTurret r h steps <>
 >     translate (-1) h (-1)
->          (move y 1 (circle r' 4) # air <> -- top windows
+>          (move y 1 (circle x z r' 4) # air <> -- top windows
 >           move y 2 (cone r' 8 (2 * steps) # bricks)) -- cone roof
 >   where r' = r + 1
 
@@ -409,10 +417,8 @@ The castle keep is a large fortified building in the centre of the grounds. We'l
 >     , grid (w-1) [ [ t,  t]
 >                  , [ t,  t]
 >                  ]
->     -- make a larger archway from default stone that juts out,
->     -- before overlaying the smaller empty space one.
->     , translate (w `div` 2) 0 w $ centre x $ archway 3 2
->     , translate (w `div` 2) 0 w $ centre x $ archway 2 3 # air
+>     -- make a large archway that juts out
+>     , translate (w `div` 2) 0 (w-1) $ centre x $ archway 3 3
 >     ]
 >   where
 >     floors
@@ -421,19 +427,21 @@ The castle keep is a large fortified building in the centre of the grounds. We'l
 >         $ floor w' w' # oak_planks
 >     w' = w - 2
 
-The archway was tricky to do. I started by defining some simple right-angle rotations, to allow me to rotate my circle floors (used for the circular turrets).
+An archway can be created from a larger solid arch (default stone) and overlaying a smaller empty space (air) arch.
 
-> rotate_x, rotate_y :: Blocks -> Blocks
-> rotate_x = mapBlocks $ over blockCoord $ \(Coord x y z) -> Coord x z y
-> rotate_y = mapBlocks $ over blockCoord $ \(Coord x y z) -> Coord y x z
-
-An archway can then be made by rotating the circular floor and replicating it to achieve thickness:
-
-> -- | Make a solid archway of radius 'r' and thickness 't'.
+> --  | Make an archway of radius 'r' and thickness 't'.
 > archway :: Int -> Int -> Blocks
 > archway r t
+>     =  solidArch r t
+>     <> move x 1 (solidArch (r-1) t # air)
+
+To create the solid arch, we overlay a solid circle and wall in the ('x','y') plane and replicate it across 'z' to achieve thickness.
+
+> --  | Make a solid arch of radius 'r' and thickness 't'.
+> solidArch :: Int -> Int -> Blocks
+> solidArch r t
 >     = replicate z 1 t
->     $ rotate_x (circleFloor r <> floor (2*r + 1) r)
+>     $ solidCircle x y r <> wall x (2*r + 1) r
 
 Notice that the `castleKeep` definition is parameterised by a turret structure.
 
@@ -449,37 +457,28 @@ The most important component of a English castle is the outer castle wall, so I 
 > castleWall w h = mconcat
 >     [ squareWall w h                             -- outer wall
 >     , translate 3    0  3 (squareWall (w-6) h)   -- inner wall
->     , translate 1 (h-1) 1 (wideSquare 2 (w-2))   -- roof
+>     , translate 1 (h-1) 1 (squareRoof 2 (w-2))   -- roof
 >     , translate (-1) (h-1) (-1)
 >         (squareWall (w+2) 2 <> move y 2 (squareCrenellations (w+2))) -- overhangs
 >     , translate 3 h 3 (square (w-6) # oak_fence)  -- wall top fencing
->     -- since the wall is hollow we make a larger archway section
->     -- out of default stone before we overlay the smaller empty space one
->     , translate (w `div` 2) 0 (w-3) $ centre x $ archway 5 2
->     , translate (w `div` 2) 0 (w-4) $ centre x $ archway 4 4 # air
+>     , translate (w `div` 2) 0 (w-4) $ centre x $ archway 4 4
 >     ]
 
 To create the final full castle, we start with the castle wall and then surround the keep by outer turrets and a gatehouse (two turrets close together at the entrance).
 
 > englishCastle :: Blocks
 > englishCastle = mconcat
->     [ castleWall w h
->     , grid (w `div` 2)
->         [ [ t,  t,  t]
->         , [ t,  k,  t]
->         , [ t,  g,  t]
->         ]
->     ]
->   where
->     t  = circularTurret 4 15 20
->     k  = castleKeep (circularTurret 3 15 20) kw kh
->     w  = 100 -- castle
->     h  = 10  -- wall height
->     kw = 24  -- keep width
->     kh = 15  -- keep height
->     -- gatehouse entrance has two turrets together
->     g  = move x (-12) t <> move x 12 t
-
+>    [ castleWall 100{-width-} 10{-height-}
+>    , grid 50 {-spacing-}
+>        [ [ t,  t,  t]
+>        , [ t,  k,  t]
+>        , [ t,  g,  t]
+>        ]
+>    ]
+>  where
+>    t  = circularTurret 4{-radius-} 15{-height-} 20
+>    k  = castleKeep (circularTurret 3{-radius-} 15{-height-} 20) 24{-width-} 15{-height-}
+>    g  = move x (-12) t <> move x 12 t -- gatehouse entrance has two turrets together
 
 ![English Castle](../img/minecraft/english_castle2.png "English Castle")
 
