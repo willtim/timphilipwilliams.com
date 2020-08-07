@@ -22,8 +22,10 @@ records and effect-tracking [here][#code].
 ![duck typing done right](/img/lego-duck.jpg)\
 \
 
+UPDATE: For a more extensive example of row-polymorphism, be sure to take a look at the Expresso project [here][#expresso].
 
 * * * * * * * *
 
 [#slides]: http://www.timphilipwilliams.com/slides/StructuralTypingForStructuredProducts.pdf
 [#code]: https://github.com/willtim/row-polymorphism
+[#expresso]: https://github.com/willtim/Expresso

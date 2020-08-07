@@ -2,8 +2,18 @@
 title: Fixing GADTs
 published: 2013-01-16T23:00:00Z
 tags: haskell, GADTs, generics
-description: Generic recursion schemes for GADTs using fixed points of higher-order functors.
+description: An exploration of type-safe traversals in Haskell using GADTs.
 ---
+
+This post was originally titled "Generic recursion schemes for GADTs
+using fixed points of higher-order functors" -- but that doesn't
+really explain why one would go to all the trouble of writing code
+this way. The answer, of course, is that we obtain various proofs of
+correctness embedded within our static types. For example, we have a
+proof that our traversals are correct and that our syntax AST is
+well-typed, both before and after the transformations. As to whether
+the effort is worth it, I will leave that as an exercise to the
+reader!
 
 One of my personal favourite applications of category theory applied to typed
 functional programming, is datatype generic programming using the fixed points
